@@ -1,4 +1,4 @@
-import { getElementPosition } from 'utils'
+import { getElementPosition } from './utils'
 
 class Rect {
   constructor ({ top, right, bottom, left }) {
@@ -40,10 +40,7 @@ class Rect {
     if (!rect) {
       return false
     }
-    return _.isEqual(
-      _.pick(this, 'top', 'right', 'bottom', 'left'),
-      _.pick(rect, 'top', 'right', 'bottom', 'left')
-    )
+    return this.top === rect.top && this.right === rect.right && this.bottom === rect.bottom && this.left === rect.left
   }
 }
 

@@ -1,3 +1,14 @@
+export const last = (array) => {
+  const length = array == null ? 0 : array.length
+  return length ? array[length - 1] : undefined
+}
+
+export const first = (array) =>
+  (array != null && array.length) ? array[0] : undefined
+
+export const values = (object) =>
+  object == null ? [] : Object.keys(object).map((key) => object[key])
+
 const getBodyScrollPosition = () => {
   const body = document.body
   const docEl = document.documentElement

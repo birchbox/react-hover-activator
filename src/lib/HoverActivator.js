@@ -1,14 +1,25 @@
-import Rect from 'Rect'
-import { canHover } from 'utils'
+import React from 'react'
+import Rect from './Rect'
+import { first, last, values, canHover } from './utils'
 
 const DELAY = 300
+
 const MOUSE_LOCS_TRACKED = 5
+
 const slope = (a, b) => (b.y - a.y) / (b.x - a.x)
+
+const isSameMouseLoc = (a, b) =>
+  a
+    ? b && a.x === b.x && a.y === b.y
+    : !b
 
 class HoverActivator extends React.Component {
   constructor (props) {
     super(props)
-    autobind(this, 'handleMouseMove', 'handleTargetHoverChange', 'handleSourceHoverChange', 'maybeDeactivate')
+    this.handleMouseMove = this.handleMouseMove.bind(this)
+    this.handleTargetHoverChange = this.handleTargetHoverChange.bind(this)
+    this.handleSourceHoverChange = this.handleSourceHoverChange.bind(this)
+    this.maybeDeactivate = this.maybeDeactivate.bind(this)
   }
 
   isEnabled () {
@@ -76,7 +87,7 @@ class HoverActivator extends React.Component {
       this.clearTimers()
     } else {
       this.logDebug('target leave')
-      this.leaveTargetTimer = _.delay(this.props.onActiveKeyChange.bind(this, null), DELAY)
+      this.leaveTargetTimer = setTimeout(this.props.onActiveKeyChange.bind(this, null), DELAY)
     }
   }
 
@@ -100,7 +111,7 @@ class HoverActivator extends React.Component {
     const delay = this.getActivationDelay()
     if (delay) {
       this.logDebug(`delay activating '${key}'`)
-      this.activateTimer = _.delay(this.maybeActivate.bind(this, key), delay)
+      this.activateTimer = setTimeout(this.maybeActivate.bind(this, key), delay)
     } else {
       this.logDebug(`activate '${key}'`)
       this.props.onActiveKeyChange(key)
@@ -112,12 +123,12 @@ class HoverActivator extends React.Component {
       this.logDebug('no activeKey or targetRect')
       return 0
     }
-    const loc = _.last(this.mouseLocs)
-    if (!loc || _.isEqual(loc, this.lastDelayedActivateLoc)) {
+    const loc = last(this.mouseLocs)
+    if (!loc || isSameMouseLoc(loc, this.lastDelayedActivateLoc)) {
       this.logDebug('no loc or didnt move')
       return 0
     }
-    const prevLoc = _.first(this.mouseLocs) || loc
+    const prevLoc = first(this.mouseLocs) || loc
     if (this.isMovingTowardsTarget(loc, prevLoc)) {
       this.logDebug('moving towards target')
       this.lastDelayedActivateLoc = loc
@@ -131,7 +142,7 @@ class HoverActivator extends React.Component {
     const delay = this.getDeactivateDelay()
     if (delay > 0) {
       this.logDebug('delay deactivating')
-      this.deactivateTimer = _.delay(this.maybeDeactivate, delay)
+      this.deactivateTimer = setTimeout(this.maybeDeactivate, delay)
     } else if (!delay) {
       this.logDebug('deactivate')
       this.props.onActiveKeyChange(null)
@@ -139,17 +150,17 @@ class HoverActivator extends React.Component {
   }
 
   getDeactivateDelay () {
-    const loc = _.last(this.mouseLocs)
+    const loc = last(this.mouseLocs)
     if (!loc || !this.props.targetRect) {
       this.logDebug('no loc or targetRect')
       return 0
     }
     const isOverTarget = this.props.targetRect.containsPoint(loc)
-    if (_.isEqual(loc, this.lastDelayedDeactivateLoc)) {
+    if (isSameMouseLoc(loc, this.lastDelayedDeactivateLoc)) {
       this.logDebug('didnt move')
       return isOverTarget ? -1 : 0
     }
-    const prevLoc = _.first(this.mouseLocs) || loc
+    const prevLoc = first(this.mouseLocs) || loc
     if (this.isMovingTowardsTarget(loc, prevLoc)) {
       this.logDebug('moving towards target')
       this.lastDelayedDeactivateLoc = loc
@@ -171,7 +182,10 @@ class HoverActivator extends React.Component {
   }
 
   render () {
-    return this.props.children(_.pick(this, 'handleSourceHoverChange', 'handleTargetHoverChange'))
+    return this.props.children({
+      handleSourceHoverChange: this.handleSourceHoverChange,
+      handleTargetHoverChange: this.handleTargetHoverChange,
+    })
   }
 
   logDebug (msg) {
@@ -186,7 +200,7 @@ HoverActivator.propTypes = {
   getActiveKey: React.PropTypes.func.isRequired,
   isEnabled: React.PropTypes.bool,
   onActiveKeyChange: React.PropTypes.func.isRequired,
-  targetAlignment: React.PropTypes.oneOf(_.values(Rect.ALIGNMENT)),
+  targetAlignment: React.PropTypes.oneOf(values(Rect.ALIGNMENT)),
   targetRect: React.PropTypes.instanceOf(Rect),
   debugId: React.PropTypes.string,
 }
